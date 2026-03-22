@@ -1,52 +1,49 @@
 # ARCH Internship - Month 1
 
-This repository now contains four C++ practice projects:
+This repository contains four C++ practice projects:
 
-1. **`dice.cpp`** (Project 1): A cross-platform dice roller app. It uses a Win32 GUI on Windows and a console menu on Linux/macOS.
-2. **`todo.cpp`** (Project 2): A cross-platform to-do list app. It uses a Win32 GUI on Windows and a console menu on Linux/macOS.
-3. **`number_guess.cpp`** (Project 3): A console number guessing game between 1 and 100 with high/low hints.
-4. **`atm_simulation.cpp`** (Project 4): A console ATM simulation using OOP for balance, deposit, and withdrawal.
+1. **`dice.cpp`** (Project 1): A cross-platform GUI dice roller app (Win32 GUI on Windows, X11 GUI on Linux).
+2. **`todo.cpp`** (Project 2): A cross-platform GUI to-do list app (Win32 GUI on Windows, X11 GUI on Linux).
+3. **`number_guess.cpp`** (Project 3): A cross-platform GUI number guessing game (Win32 GUI on Windows, X11 GUI on Linux).
+4. **`atm_simulation.cpp`** (Project 4): A cross-platform GUI ATM simulation using OOP for balance, deposit, and withdrawal.
 
 ---
 
 ## Requirements
 
-- `dice.cpp` builds on both Windows and Linux/macOS (GUI on Windows, console elsewhere)
-- `todo.cpp` builds on both Windows and Linux/macOS (GUI on Windows, console elsewhere)
-- A C++ compiler with Win32 support for GUI apps
-  - Visual C++ (`cl`) from Visual Studio Developer Command Prompt, or
-  - MinGW g++
-- Any C++17-compatible compiler for console apps (`number_guess.cpp`, `atm_simulation.cpp`)
+- `dice.cpp`, `todo.cpp`, `number_guess.cpp`, and `atm_simulation.cpp` build on both Windows and Linux with GUI behavior.
+- A C++17 compiler.
+- Linux GUI builds require X11 development libraries (`libX11`).
 
 ---
 
 ## Build
 
-### Using MSVC (`cl`)
+### Using MSVC (`cl`) on Windows
 
 ```powershell
 cl /EHsc dice.cpp user32.lib gdi32.lib
 cl /EHsc todo.cpp user32.lib gdi32.lib
-cl /EHsc number_guess.cpp
-cl /EHsc atm_simulation.cpp
+cl /EHsc number_guess.cpp user32.lib gdi32.lib
+cl /EHsc atm_simulation.cpp user32.lib gdi32.lib
 ```
 
 ### Using MinGW g++ (Windows)
 
 ```powershell
-g++ -std=c++17 dice.cpp -o dice.exe -municode -lgdi32 -luser32
-g++ -std=c++17 todo.cpp -o todo.exe -municode -lgdi32 -luser32
-g++ -std=c++17 number_guess.cpp -o number_guess.exe
-g++ -std=c++17 atm_simulation.cpp -o atm_simulation.exe
+g++ -std=c++17 dice.cpp -o dice.exe -lgdi32 -luser32
+g++ -std=c++17 todo.cpp -o todo.exe -lgdi32 -luser32
+g++ -std=c++17 number_guess.cpp -o number_guess.exe -lgdi32 -luser32
+g++ -std=c++17 atm_simulation.cpp -o atm_simulation.exe -lgdi32 -luser32
 ```
 
-### Using g++ on Linux/macOS
+### Using g++ on Linux
 
 ```bash
-g++ -std=c++17 dice.cpp -o dice
-g++ -std=c++17 todo.cpp -o todo
-g++ -std=c++17 number_guess.cpp -o number_guess
-g++ -std=c++17 atm_simulation.cpp -o atm_simulation
+g++ -std=c++17 dice.cpp -o dice -lX11
+g++ -std=c++17 todo.cpp -o todo -lX11
+g++ -std=c++17 number_guess.cpp -o number_guess -lX11
+g++ -std=c++17 atm_simulation.cpp -o atm_simulation -lX11
 ```
 
 ---
@@ -62,7 +59,7 @@ g++ -std=c++17 atm_simulation.cpp -o atm_simulation
 .\atm_simulation.exe
 ```
 
-### Linux/macOS
+### Linux
 
 ```bash
 ./dice

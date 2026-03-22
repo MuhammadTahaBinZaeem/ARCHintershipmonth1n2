@@ -122,50 +122,115 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
 
 #else
 
-#include <iostream>
-#include <limits>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/keysym.h>
+#include <cstdlib>
 
 namespace {
+struct Rect {
+    int x;
+    int y;
+    int w;
+    int h;
+};
+
 mt19937 g_rng{random_device{}()};
 uniform_int_distribution<int> g_dist(1, 6);
+
+string g_die1 = "Die 1: -";
+string g_die2 = "Die 2: -";
+string g_total = "Total: -";
+string g_hint = "Click Roll to start.";
+
+const Rect kRollButton{20, 170, 120, 36};
+const Rect kQuitButton{160, 170, 120, 36};
+
+bool PointInRect(int x, int y, const Rect& r) {
+    return x >= r.x && x <= (r.x + r.w) && y >= r.y && y <= (r.y + r.h);
+}
 
 void RollDice() {
     const int die1 = g_dist(g_rng);
     const int die2 = g_dist(g_rng);
     const int total = die1 + die2;
 
-    cout << "Die 1: " << die1 << "\n";
-    cout << "Die 2: " << die2 << "\n";
-    cout << "Total: " << total << "\n";
+    g_die1 = "Die 1: " + to_string(die1);
+    g_die2 = "Die 2: " + to_string(die2);
+    g_total = "Total: " + to_string(total);
+    g_hint = "Roll again?";
+}
+
+void DrawButton(Display* display, Window window, GC gc, const Rect& button, const string& label) {
+    XDrawRectangle(display, window, gc, button.x, button.y, button.w, button.h);
+    XDrawString(display, window, gc, button.x + 12, button.y + 23, label.c_str(), static_cast<int>(label.size()));
+}
+
+void Redraw(Display* display, Window window, GC gc) {
+    XClearWindow(display, window);
+
+    const string title = "Dice Roller";
+    XDrawString(display, window, gc, 20, 30, title.c_str(), static_cast<int>(title.size()));
+    XDrawString(display, window, gc, 20, 65, g_die1.c_str(), static_cast<int>(g_die1.size()));
+    XDrawString(display, window, gc, 20, 95, g_die2.c_str(), static_cast<int>(g_die2.size()));
+    XDrawString(display, window, gc, 20, 125, g_total.c_str(), static_cast<int>(g_total.size()));
+    XDrawString(display, window, gc, 20, 150, g_hint.c_str(), static_cast<int>(g_hint.size()));
+
+    DrawButton(display, window, gc, kRollButton, "Roll");
+    DrawButton(display, window, gc, kQuitButton, "Quit");
 }
 }  // namespace
 
 int main() {
-    cout << "=== Dice Roller (Console mode for non-Windows systems) ===\n";
+    Display* display = XOpenDisplay(nullptr);
+    if (display == nullptr) {
+        return 1;
+    }
 
-    while (true) {
-        cout << "\n1. Roll Dice\n";
-        cout << "2. Exit\n";
-        cout << "Choice: ";
+    const int screen = DefaultScreen(display);
+    const unsigned long white = WhitePixel(display, screen);
+    const unsigned long black = BlackPixel(display, screen);
 
-        int choice = 0;
-        if (!(cin >> choice)) {
-            cout << "Invalid choice.\n";
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            continue;
-        }
+    Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
+                                        100, 100, 320, 240, 1, black, white);
 
-        if (choice == 1) {
-            RollDice();
-        } else if (choice == 2) {
-            cout << "Goodbye!\n";
-            break;
-        } else {
-            cout << "Please choose 1 or 2.\n";
+    XStoreName(display, window, "Dice Roller");
+    XSelectInput(display, window, ExposureMask | ButtonPressMask | KeyPressMask | StructureNotifyMask);
+    XMapWindow(display, window);
+
+    GC gc = XCreateGC(display, window, 0, nullptr);
+    XSetForeground(display, gc, black);
+
+    bool running = true;
+    while (running) {
+        XEvent event;
+        XNextEvent(display, &event);
+
+        if (event.type == Expose) {
+            Redraw(display, window, gc);
+        } else if (event.type == ButtonPress) {
+            const int x = event.xbutton.x;
+            const int y = event.xbutton.y;
+
+            if (PointInRect(x, y, kRollButton)) {
+                RollDice();
+                Redraw(display, window, gc);
+            } else if (PointInRect(x, y, kQuitButton)) {
+                running = false;
+            }
+        } else if (event.type == KeyPress) {
+            KeySym key = XLookupKeysym(&event.xkey, 0);
+            if (key == XK_Escape || key == XK_q || key == XK_Q) {
+                running = false;
+            }
+        } else if (event.type == DestroyNotify) {
+            running = false;
         }
     }
 
+    XFreeGC(display, gc);
+    XDestroyWindow(display, window);
+    XCloseDisplay(display);
     return 0;
 }
 

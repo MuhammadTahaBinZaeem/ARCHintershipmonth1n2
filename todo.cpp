@@ -182,122 +182,208 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
 
 #else
 
-#include <iostream>
-#include <limits>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/keysym.h>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
 
 namespace {
-vector<string> g_tasks;
+struct Rect {
+    int x;
+    int y;
+    int w;
+    int h;
+};
 
-bool IsBlankTask(const string& task) {
-    return task.find_first_not_of(" \t\r\n") == string::npos;
+vector<string> g_tasks;
+string g_input;
+string g_status = "Type task text, then click Add.";
+int g_selected = -1;
+
+const Rect kInputBox{20, 20, 320, 30};
+const Rect kAddButton{360, 20, 100, 30};
+const Rect kListBox{20, 70, 440, 220};
+const Rect kRemoveButton{20, 305, 150, 32};
+const Rect kClearButton{180, 305, 120, 32};
+const Rect kQuitButton{340, 305, 120, 32};
+
+bool PointInRect(int x, int y, const Rect& r) {
+    return x >= r.x && x <= (r.x + r.w) && y >= r.y && y <= (r.y + r.h);
 }
 
-void PrintTasks() {
-    cout << "\n==== To-Do List (" << g_tasks.size() << " task" << (g_tasks.size() == 1 ? "" : "s") << ") ====" << '\n';
-    if (g_tasks.empty()) {
-        cout << "(no tasks)\n";
-        return;
-    }
-
-    for (size_t i = 0; i < g_tasks.size(); ++i) {
-        cout << i + 1 << ". " << g_tasks[i] << '\n';
-    }
+bool IsBlank(const string& text) {
+    return all_of(text.begin(), text.end(), [](unsigned char ch) { return isspace(ch) != 0; });
 }
 
 void AddTask() {
-    cout << "Enter task: ";
-    string task;
-    getline(cin, task);
-
-    if (task.empty() || IsBlankTask(task)) {
-        cout << "Please enter a non-empty task.\n";
+    if (g_input.empty() || IsBlank(g_input)) {
+        g_status = "Please enter a non-empty task.";
         return;
     }
 
-    g_tasks.push_back(task);
-    cout << "Task added.\n";
+    g_tasks.push_back(g_input);
+    g_input.clear();
+    g_selected = static_cast<int>(g_tasks.size()) - 1;
+    g_status = "Task added.";
 }
 
-void RemoveTask() {
+void RemoveSelected() {
+    if (g_selected < 0 || g_selected >= static_cast<int>(g_tasks.size())) {
+        g_status = "Select a task first.";
+        return;
+    }
+
+    g_tasks.erase(g_tasks.begin() + g_selected);
     if (g_tasks.empty()) {
-        cout << "No tasks to remove.\n";
-        return;
+        g_selected = -1;
+    } else if (g_selected >= static_cast<int>(g_tasks.size())) {
+        g_selected = static_cast<int>(g_tasks.size()) - 1;
     }
-
-    PrintTasks();
-    cout << "Enter task number to remove: ";
-    size_t index = 0;
-    if (!(cin >> index)) {
-        cout << "Invalid input.\n";
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        return;
-    }
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-    if (index == 0 || index > g_tasks.size()) {
-        cout << "Task number out of range.\n";
-        return;
-    }
-
-    g_tasks.erase(g_tasks.begin() + static_cast<long>(index - 1));
-    cout << "Task removed.\n";
+    g_status = "Task removed.";
 }
 
-void ClearAllTasks() {
+void ClearAll() {
     if (g_tasks.empty()) {
-        cout << "No tasks to clear.\n";
+        g_status = "No tasks to clear.";
         return;
     }
 
-    cout << "Clear all tasks? (y/n): ";
-    string response;
-    getline(cin, response);
+    g_tasks.clear();
+    g_selected = -1;
+    g_status = "All tasks cleared.";
+}
 
-    if (!response.empty() && (response[0] == 'y' || response[0] == 'Y')) {
-        g_tasks.clear();
-        cout << "All tasks cleared.\n";
-    } else {
-        cout << "Canceled.\n";
+void DrawButton(Display* display, Window window, GC gc, const Rect& button, const string& label) {
+    XDrawRectangle(display, window, gc, button.x, button.y, button.w, button.h);
+    XDrawString(display, window, gc, button.x + 10, button.y + 21, label.c_str(), static_cast<int>(label.size()));
+}
+
+void Redraw(Display* display, Window window, GC gc) {
+    XClearWindow(display, window);
+
+    const string title = "To-Do List";
+    XDrawString(display, window, gc, 20, 14, title.c_str(), static_cast<int>(title.size()));
+
+    XDrawRectangle(display, window, gc, kInputBox.x, kInputBox.y, kInputBox.w, kInputBox.h);
+    XDrawString(display, window, gc, kInputBox.x + 8, kInputBox.y + 20, g_input.c_str(), static_cast<int>(g_input.size()));
+    DrawButton(display, window, gc, kAddButton, "Add");
+
+    XDrawRectangle(display, window, gc, kListBox.x, kListBox.y, kListBox.w, kListBox.h);
+    for (size_t i = 0; i < g_tasks.size(); ++i) {
+        const int y = kListBox.y + 22 + static_cast<int>(i) * 18;
+        if (y > kListBox.y + kListBox.h - 8) {
+            break;
+        }
+
+        string line = to_string(i + 1) + ". " + g_tasks[i];
+        if (static_cast<int>(i) == g_selected) {
+            XFillRectangle(display, window, gc, kListBox.x + 3, y - 13, kListBox.w - 6, 16);
+            XSetForeground(display, gc, WhitePixel(display, DefaultScreen(display)));
+            XDrawString(display, window, gc, kListBox.x + 8, y, line.c_str(), static_cast<int>(line.size()));
+            XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
+        } else {
+            XDrawString(display, window, gc, kListBox.x + 8, y, line.c_str(), static_cast<int>(line.size()));
+        }
+    }
+
+    DrawButton(display, window, gc, kRemoveButton, "Remove Selected");
+    DrawButton(display, window, gc, kClearButton, "Clear All");
+    DrawButton(display, window, gc, kQuitButton, "Quit");
+
+    const string count = "Tasks: " + to_string(g_tasks.size());
+    XDrawString(display, window, gc, 360, 355, count.c_str(), static_cast<int>(count.size()));
+    XDrawString(display, window, gc, 20, 355, g_status.c_str(), static_cast<int>(g_status.size()));
+}
+
+void HandleKeyPress(XKeyEvent* keyEvent) {
+    char buffer[16] = {};
+    KeySym key = 0;
+    int len = XLookupString(keyEvent, buffer, sizeof(buffer), &key, nullptr);
+
+    if (key == XK_Return) {
+        AddTask();
+    } else if (key == XK_BackSpace) {
+        if (!g_input.empty()) {
+            g_input.pop_back();
+        }
+    } else if (key == XK_Escape) {
+        g_input.clear();
+        g_status = "Input cleared.";
+    } else if (len > 0 && isprint(static_cast<unsigned char>(buffer[0])) != 0) {
+        g_input.push_back(buffer[0]);
+    }
+}
+
+void HandleListSelection(int x, int y) {
+    if (!PointInRect(x, y, kListBox)) {
+        return;
+    }
+
+    const int row = (y - (kListBox.y + 8)) / 18;
+    if (row >= 0 && row < static_cast<int>(g_tasks.size())) {
+        g_selected = row;
+        g_status = "Task selected.";
     }
 }
 }  // namespace
 
 int main() {
-    cout << "To-Do List (Console mode for non-Windows systems)\n";
+    Display* display = XOpenDisplay(nullptr);
+    if (display == nullptr) {
+        return 1;
+    }
 
-    while (true) {
-        PrintTasks();
-        cout << "\nChoose an action:\n"
-             << "1. Add task\n"
-             << "2. Remove task\n"
-             << "3. Clear all tasks\n"
-             << "4. Exit\n"
-             << "Choice: ";
+    const int screen = DefaultScreen(display);
+    const unsigned long white = WhitePixel(display, screen);
+    const unsigned long black = BlackPixel(display, screen);
 
-        int choice = 0;
-        if (!(cin >> choice)) {
-            cout << "Invalid choice.\n";
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            continue;
-        }
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    Window window = XCreateSimpleWindow(display, RootWindow(display, screen),
+                                        100, 100, 500, 380, 1, black, white);
 
-        if (choice == 1) {
-            AddTask();
-        } else if (choice == 2) {
-            RemoveTask();
-        } else if (choice == 3) {
-            ClearAllTasks();
-        } else if (choice == 4) {
-            cout << "Goodbye!\n";
-            break;
-        } else {
-            cout << "Please choose 1-4.\n";
+    XStoreName(display, window, "To-Do List");
+    XSelectInput(display, window, ExposureMask | ButtonPressMask | KeyPressMask | StructureNotifyMask);
+    XMapWindow(display, window);
+
+    GC gc = XCreateGC(display, window, 0, nullptr);
+    XSetForeground(display, gc, black);
+
+    bool running = true;
+    while (running) {
+        XEvent event;
+        XNextEvent(display, &event);
+
+        if (event.type == Expose) {
+            Redraw(display, window, gc);
+        } else if (event.type == KeyPress) {
+            HandleKeyPress(&event.xkey);
+            Redraw(display, window, gc);
+        } else if (event.type == ButtonPress) {
+            const int x = event.xbutton.x;
+            const int y = event.xbutton.y;
+
+            if (PointInRect(x, y, kAddButton)) {
+                AddTask();
+            } else if (PointInRect(x, y, kRemoveButton)) {
+                RemoveSelected();
+            } else if (PointInRect(x, y, kClearButton)) {
+                ClearAll();
+            } else if (PointInRect(x, y, kQuitButton)) {
+                running = false;
+            } else {
+                HandleListSelection(x, y);
+            }
+
+            Redraw(display, window, gc);
+        } else if (event.type == DestroyNotify) {
+            running = false;
         }
     }
 
+    XFreeGC(display, gc);
+    XDestroyWindow(display, window);
+    XCloseDisplay(display);
     return 0;
 }
 
