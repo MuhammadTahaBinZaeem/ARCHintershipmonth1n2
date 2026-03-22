@@ -1,8 +1,10 @@
 #include <random>
 #include <string>
-#include <windows.h>
 
 using namespace std;
+
+#ifdef _WIN32
+#include <windows.h>
 
 namespace {
 constexpr int ID_ROLL_BUTTON = 101;
@@ -117,3 +119,54 @@ int main() {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     return RunApp(hInstance, nCmdShow);
 }
+
+#else
+
+#include <iostream>
+#include <limits>
+
+namespace {
+mt19937 g_rng{random_device{}()};
+uniform_int_distribution<int> g_dist(1, 6);
+
+void RollDice() {
+    const int die1 = g_dist(g_rng);
+    const int die2 = g_dist(g_rng);
+    const int total = die1 + die2;
+
+    cout << "Die 1: " << die1 << "\n";
+    cout << "Die 2: " << die2 << "\n";
+    cout << "Total: " << total << "\n";
+}
+}  // namespace
+
+int main() {
+    cout << "=== Dice Roller (Console mode for non-Windows systems) ===\n";
+
+    while (true) {
+        cout << "\n1. Roll Dice\n";
+        cout << "2. Exit\n";
+        cout << "Choice: ";
+
+        int choice = 0;
+        if (!(cin >> choice)) {
+            cout << "Invalid choice.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
+
+        if (choice == 1) {
+            RollDice();
+        } else if (choice == 2) {
+            cout << "Goodbye!\n";
+            break;
+        } else {
+            cout << "Please choose 1 or 2.\n";
+        }
+    }
+
+    return 0;
+}
+
+#endif

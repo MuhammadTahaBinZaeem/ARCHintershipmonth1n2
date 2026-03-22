@@ -2,8 +2,8 @@
 
 This repository now contains four C++ practice projects:
 
-1. **`dice.cpp`** (Project 1): A Win32 dice roller GUI that rolls two dice and shows their total.
-2. **`todo.cpp`** (Project 2): A Win32 to-do list GUI with add, remove selected, and clear-all actions.
+1. **`dice.cpp`** (Project 1): A cross-platform dice roller app. It uses a Win32 GUI on Windows and a console menu on Linux/macOS.
+2. **`todo.cpp`** (Project 2): A cross-platform to-do list app. It uses a Win32 GUI on Windows and a console menu on Linux/macOS.
 3. **`number_guess.cpp`** (Project 3): A console number guessing game between 1 and 100 with high/low hints.
 4. **`atm_simulation.cpp`** (Project 4): A console ATM simulation using OOP for balance, deposit, and withdrawal.
 
@@ -11,7 +11,8 @@ This repository now contains four C++ practice projects:
 
 ## Requirements
 
-- Windows OS for the GUI projects (`dice.cpp`, `todo.cpp`)
+- `dice.cpp` builds on both Windows and Linux/macOS (GUI on Windows, console elsewhere)
+- `todo.cpp` builds on both Windows and Linux/macOS (GUI on Windows, console elsewhere)
 - A C++ compiler with Win32 support for GUI apps
   - Visual C++ (`cl`) from Visual Studio Developer Command Prompt, or
   - MinGW g++
@@ -30,7 +31,7 @@ cl /EHsc number_guess.cpp
 cl /EHsc atm_simulation.cpp
 ```
 
-### Using MinGW g++
+### Using MinGW g++ (Windows)
 
 ```powershell
 g++ -std=c++17 dice.cpp -o dice.exe -municode -lgdi32 -luser32
@@ -39,15 +40,35 @@ g++ -std=c++17 number_guess.cpp -o number_guess.exe
 g++ -std=c++17 atm_simulation.cpp -o atm_simulation.exe
 ```
 
+### Using g++ on Linux/macOS
+
+```bash
+g++ -std=c++17 dice.cpp -o dice
+g++ -std=c++17 todo.cpp -o todo
+g++ -std=c++17 number_guess.cpp -o number_guess
+g++ -std=c++17 atm_simulation.cpp -o atm_simulation
+```
+
 ---
 
 ## Run
+
+### Windows
 
 ```powershell
 .\dice.exe
 .\todo.exe
 .\number_guess.exe
 .\atm_simulation.exe
+```
+
+### Linux/macOS
+
+```bash
+./dice
+./todo
+./number_guess
+./atm_simulation
 ```
 
 ---
