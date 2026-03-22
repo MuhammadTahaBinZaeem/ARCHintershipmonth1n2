@@ -1,8 +1,10 @@
 #include <string>
 #include <vector>
-#include <windows.h>
 
 using namespace std;
+
+#ifdef _WIN32
+#include <windows.h>
 
 namespace {
 constexpr int ID_TASK_INPUT = 201;
@@ -177,3 +179,126 @@ int main() {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     return RunApp(hInstance, nCmdShow);
 }
+
+#else
+
+#include <iostream>
+#include <limits>
+
+namespace {
+vector<string> g_tasks;
+
+bool IsBlankTask(const string& task) {
+    return task.find_first_not_of(" \t\r\n") == string::npos;
+}
+
+void PrintTasks() {
+    cout << "\n==== To-Do List (" << g_tasks.size() << " task" << (g_tasks.size() == 1 ? "" : "s") << ") ====" << '\n';
+    if (g_tasks.empty()) {
+        cout << "(no tasks)\n";
+        return;
+    }
+
+    for (size_t i = 0; i < g_tasks.size(); ++i) {
+        cout << i + 1 << ". " << g_tasks[i] << '\n';
+    }
+}
+
+void AddTask() {
+    cout << "Enter task: ";
+    string task;
+    getline(cin, task);
+
+    if (task.empty() || IsBlankTask(task)) {
+        cout << "Please enter a non-empty task.\n";
+        return;
+    }
+
+    g_tasks.push_back(task);
+    cout << "Task added.\n";
+}
+
+void RemoveTask() {
+    if (g_tasks.empty()) {
+        cout << "No tasks to remove.\n";
+        return;
+    }
+
+    PrintTasks();
+    cout << "Enter task number to remove: ";
+    size_t index = 0;
+    if (!(cin >> index)) {
+        cout << "Invalid input.\n";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        return;
+    }
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+    if (index == 0 || index > g_tasks.size()) {
+        cout << "Task number out of range.\n";
+        return;
+    }
+
+    g_tasks.erase(g_tasks.begin() + static_cast<long>(index - 1));
+    cout << "Task removed.\n";
+}
+
+void ClearAllTasks() {
+    if (g_tasks.empty()) {
+        cout << "No tasks to clear.\n";
+        return;
+    }
+
+    cout << "Clear all tasks? (y/n): ";
+    string response;
+    getline(cin, response);
+
+    if (!response.empty() && (response[0] == 'y' || response[0] == 'Y')) {
+        g_tasks.clear();
+        cout << "All tasks cleared.\n";
+    } else {
+        cout << "Canceled.\n";
+    }
+}
+}  // namespace
+
+int main() {
+    cout << "To-Do List (Console mode for non-Windows systems)\n";
+
+    while (true) {
+        PrintTasks();
+        cout << "\nChoose an action:\n"
+             << "1. Add task\n"
+             << "2. Remove task\n"
+             << "3. Clear all tasks\n"
+             << "4. Exit\n"
+             << "Choice: ";
+
+        int choice = 0;
+        if (!(cin >> choice)) {
+            cout << "Invalid choice.\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        if (choice == 1) {
+            AddTask();
+        } else if (choice == 2) {
+            RemoveTask();
+        } else if (choice == 3) {
+            ClearAllTasks();
+        } else if (choice == 4) {
+            cout << "Goodbye!\n";
+            break;
+        } else {
+            cout << "Please choose 1-4.\n";
+        }
+    }
+
+    return 0;
+}
+
+#endif
