@@ -76,20 +76,20 @@ A `screenshots/` folder is included with stage images for all four projects.
 
 ### Project 1 - Dice Roller
 
-![Dice Roller - Stage 1](screenshots/dice_stage1.svg)
-![Dice Roller - Stage 2](screenshots/dice_stage2.svg)
+![Dice Roller - Stage 1](screenshots/dicerollerstage1.png)
+![Dice Roller - Stage 2](screenshots/dicerollerstage2.png)
 
 ### Project 2 - To-Do List
 
-![To-Do List - Stage 1](screenshots/todo_stage1.svg)
-![To-Do List - Stage 2](screenshots/todo_stage2.svg)
+![To-Do List - Stage 1](screenshots/todostage1.png)
+![To-Do List - Stage 2](screenshots/todostage2.png)
 
 ### Project 3 - Number Guessing Game
 
-![Number Guessing - Stage 1](screenshots/number_guess_stage1.svg)
-![Number Guessing - Stage 2](screenshots/number_guess_stage2.svg)
+![Number Guessing - Stage 1](screenshots/Numberguessingstage1.png)
+![Number Guessing - Stage 2](screenshots/Numberguessingstage2.png)
 
 ### Project 4 - ATM Simulation
 
-![ATM Simulation - Stage 1](screenshots/atm_stage1.svg)
-![ATM Simulation - Stage 2](screenshots/atm_stage2.svg)
+![ATM Simulation - Stage 1](screenshots/Atmstage1.png)
+![ATM Simulation - Stage 2](screenshots/Atmstage2.png)

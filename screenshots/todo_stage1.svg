@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
-  <rect width="1200" height="700" fill="#f5f8fc"/>
-  <rect x="40" y="40" width="1120" height="620" fill="none" stroke="#3a5b94" stroke-width="5"/>
-  <rect x="40" y="40" width="1120" height="90" fill="#3a5b94"/>
-  <text x="70" y="95" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="white">Project 2: To-Do List</text>
-  <text x="70" y="220" font-family="Segoe UI, Arial, sans-serif" font-size="40" fill="#122646">Stage 1: Empty Task List</text>
-  <text x="70" y="300" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#28344b">Representative screenshot artifact for documentation</text>
-  <text x="70" y="350" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#6e788c">(Generated in this environment)</text>
-</svg>
